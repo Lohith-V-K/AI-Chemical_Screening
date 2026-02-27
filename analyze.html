@@ -83,6 +83,19 @@
                     </a>
                 </li>
             </ul>
+
+            <div style="margin-top:auto; padding-top:24px;">
+                <button onclick="signOutUser()" class="nav-link"
+                    style="width:100%; border:none; background:rgba(255,255,255,0.1); cursor:pointer; border-radius:var(--radius-sm); font-family:'Poppins',sans-serif;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Logout
+                </button>
+            </div>
         </aside>
 
         <!-- --- Center Content --- -->
@@ -114,7 +127,8 @@
                         <span class="notification-badge"></span>
                     </button>
 
-                    <img src="https://ui-avatars.com/api/?name=Researcher&background=1FAF9A&color=fff&bold=true"
+                    <img id="profileAvatar"
+                        src="https://ui-avatars.com/api/?name=Researcher&background=1FAF9A&color=fff&bold=true"
                         alt="Profile Avatar" class="profile-avatar">
                 </div>
             </header>
@@ -248,6 +262,7 @@
             </div>
         </main>
     </div>
+    <script src="supabase-config.js"></script>
     <script src="script.js"></script>
 </body>
 

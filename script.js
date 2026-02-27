@@ -1,16 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // --- 0. Auth Guard & User Display ---
+    // Only run auth guard on protected pages (not on auth.html)
+    if (typeof requireAuth === 'function') {
+        const user = requireAuth();
+        if (user) {
+            const displayName = getUserDisplayName(user);
+
+            // Update welcome text if element exists
+            const welcomeText = document.getElementById('welcomeText');
+            if (welcomeText) {
+                welcomeText.textContent = `Welcome, ${displayName}`;
+            }
+
+            // Update profile avatar if element exists
+            const profileAvatar = document.getElementById('profileAvatar');
+            if (profileAvatar) {
+                const avatarName = encodeURIComponent(displayName);
+                profileAvatar.src = `https://ui-avatars.com/api/?name=${avatarName}&background=1FAF9A&color=fff&bold=true`;
+            }
+        }
+    }
+
     // --- 1. Number Counter Animation ---
     const counters = document.querySelectorAll('.counter');
     const speed = 200; // The lower the slower
 
     counters.forEach(counter => {
         const targetAttr = counter.getAttribute('data-target');
-        if(!targetAttr) return;
-        
+        if (!targetAttr) return;
+
         const target = parseFloat(targetAttr);
         const isDecimal = targetAttr.includes('.');
-        
+
         const updateCount = () => {
             const current = parseFloat(counter.innerText) || 0;
             const inc = target / speed;
@@ -38,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const perfCanvas = document.getElementById('performanceChart');
 
     if (toxCanvas && perfCanvas && typeof Chart !== 'undefined') {
-        
+
         // Brand Colors
         const primary = '#1FAF9A';
         const primaryDark = '#0E8F83';
@@ -87,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { 
+                    y: {
                         grid: { color: bgGrid },
                         beginAtZero: true,
                         max: 6
@@ -139,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { 
+                    y: {
                         grid: { color: bgGrid },
                         beginAtZero: true,
                         max: 100
@@ -178,10 +200,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Global function to reset the analyze form completely
-window.resetForm = function() {
+window.resetForm = function () {
     const analyzeForm = document.getElementById('analyzeForm');
     const resultsSection = document.getElementById('resultsSection');
-    
+
     resultsSection.classList.remove('show');
     document.getElementById('cardTitle').innerText = 'Analyze Chemical Form';
     analyzeForm.reset();
