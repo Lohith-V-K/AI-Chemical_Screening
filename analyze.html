@@ -181,33 +181,58 @@
                     <!-- Results Section -->
                     <div class="results-section" id="resultsSection">
 
+                        <!-- Compound Info -->
+                        <div
+                            style="background:var(--bg-color); border-radius:var(--radius-sm); padding:16px 20px; margin-bottom:24px; border:1px solid rgba(31,175,154,0.08);">
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:4px;">IUPAC Name</p>
+                            <p id="resultIupac" style="font-weight:600; margin-bottom:12px;">—</p>
+                            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                                <div><span style="font-size:0.8rem; color:var(--text-muted);">Formula</span><br><strong
+                                        id="resultFormula">—</strong></div>
+                                <div><span style="font-size:0.8rem; color:var(--text-muted);">Mol.
+                                        Weight</span><br><strong id="resultMW">—</strong></div>
+                                <div><span style="font-size:0.8rem; color:var(--text-muted);">PubChem
+                                        CID</span><br><strong id="resultCID">—</strong></div>
+                                <div><span style="font-size:0.8rem; color:var(--text-muted);">XLogP</span><br><strong
+                                        id="resultXLogP">—</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Scores Row -->
                         <div class="scores-row">
                             <div class="score-circle">
                                 <span class="label">Toxicity Score</span>
-                                <div class="circle-progress toxicity"
-                                    style="background: conic-gradient(var(--danger) 85%, var(--bg-color) 0);">
-                                    <span class="value">8.5</span>
+                                <div class="circle-progress toxicity" id="toxCircle">
+                                    <span class="value" id="toxValue">—</span>
                                 </div>
                             </div>
 
                             <div class="score-circle">
                                 <span class="label">Eco Score</span>
-                                <div class="circle-progress eco"
-                                    style="background: conic-gradient(var(--warning) 32%, var(--bg-color) 0);">
-                                    <span class="value">3.2</span>
+                                <div class="circle-progress eco" id="ecoCircle">
+                                    <span class="value" id="ecoValue">—</span>
                                 </div>
                             </div>
 
                             <div class="score-circle">
                                 <span class="label">Performance</span>
-                                <div class="circle-progress performance"
-                                    style="background: conic-gradient(var(--primary) 96%, var(--bg-color) 0);">
-                                    <span class="value">9.6</span>
+                                <div class="circle-progress performance" id="perfCircle">
+                                    <span class="value" id="perfValue">—</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="suggestions-container">
+                        <!-- Hazard Statements -->
+                        <div id="hazardSection" style="display:none; margin-bottom:24px;">
+                            <h4 style="font-size:0.95rem; margin-bottom:12px; color:var(--text-main);">⚠️ GHS Hazard
+                                Statements</h4>
+                            <div id="hazardList" style="display:flex; flex-direction:column; gap:6px;"></div>
+                        </div>
+
+                        <!-- Alternatives Table -->
+                        <div class="suggestions-container" id="alternativesContainer" style="display:none;">
+                            <h4 style="padding:16px 20px 0; font-size:0.95rem; color:var(--text-main);">🌿 Eco-Friendly
+                                Alternatives</h4>
                             <table class="suggestions-table">
                                 <thead>
                                     <tr>
@@ -217,31 +242,7 @@
                                         <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Bisphenol S</td>
-                                        <td>85%</td>
-                                        <td>8.1</td>
-                                        <td><span class="status-tag danger">High Risk</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Bisphenol F</td>
-                                        <td>80%</td>
-                                        <td>7.4</td>
-                                        <td><span class="status-tag warning">Medium</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Tritan™ Copolyester</td>
-                                        <td>72%</td>
-                                        <td>2.1</td>
-                                        <td><span class="status-tag safe">Safe</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>PEF (Polyethylene Furanoate)</td>
-                                        <td>65%</td>
-                                        <td>1.5</td>
-                                        <td><span class="status-tag safe">Safe</span></td>
-                                    </tr>
+                                <tbody id="alternativesBody">
                                 </tbody>
                             </table>
                         </div>

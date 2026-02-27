@@ -177,29 +177,125 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsSection = document.getElementById('resultsSection');
 
     if (analyzeForm) {
-        analyzeForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Prevent page reload
+        analyzeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-            // Get chemical name
             const chemName = document.getElementById('chemName').value || 'Unknown Chemical';
+            const smiles = document.getElementById('smiles').value.trim();
+            const industry = document.getElementById('industry').value;
 
-            // Hide form elements, show loading
+            if (!smiles) { alert('Please enter a SMILES notation.'); return; }
+
+            // Show loading
             analyzeForm.style.display = 'none';
-            document.getElementById('cardTitle').innerText = 'Analyzing...';
+            document.getElementById('cardTitle').innerText = 'Querying PubChem...';
             loadingOverlay.style.display = 'flex';
 
-            // Simulate API Request / Model processing
-            setTimeout(() => {
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ smiles, chemicalName: chemName, industry })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Analysis failed.');
+                }
+
+                // Hide loading, show results
                 loadingOverlay.style.display = 'none';
-                document.getElementById('cardTitle').innerText = 'Analysis Results: ' + chemName;
+                document.getElementById('cardTitle').innerText = 'Analysis Results: ' + (data.compound.name || chemName);
+                renderResults(data);
                 resultsSection.classList.add('show');
-            }, 1800); // 1.8s delay for realistic feeling
+
+            } catch (error) {
+                loadingOverlay.style.display = 'none';
+                document.getElementById('cardTitle').innerText = 'Analysis Failed';
+                alert(error.message || 'Failed to analyze. Please check the SMILES notation.');
+                analyzeForm.style.display = 'block';
+            }
         });
     }
 
 });
 
-// Global function to reset the analyze form completely
+// ===== Render Results from PubChem API =====
+function renderResults(data) {
+    const { compound, scores, hazardStatements, alternatives } = data;
+
+    // --- Compound Info ---
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('resultIupac', compound.iupacName);
+    setEl('resultFormula', compound.formula);
+    setEl('resultMW', compound.molecularWeight + ' g/mol');
+    setEl('resultCID', compound.cid);
+    setEl('resultXLogP', compound.xLogP !== undefined ? compound.xLogP : 'N/A');
+
+    // --- Score Circles ---
+    updateCircle('toxCircle', 'toxValue', scores.toxicity, 10, getScoreColor(scores.toxicity, true));
+    updateCircle('ecoCircle', 'ecoValue', scores.eco, 10, getScoreColor(scores.eco, false));
+    updateCircle('perfCircle', 'perfValue', scores.performance, 10, getScoreColor(scores.performance, false));
+
+    // --- Hazard Statements ---
+    const hazardSection = document.getElementById('hazardSection');
+    const hazardList = document.getElementById('hazardList');
+    if (hazardStatements && hazardStatements.length > 0) {
+        hazardList.innerHTML = hazardStatements.map(h =>
+            `<div style="padding:8px 12px; background:rgba(255,90,95,0.06); border-radius:8px; font-size:0.85rem; color:var(--text-main);">${h}</div>`
+        ).join('');
+        hazardSection.style.display = 'block';
+    } else {
+        hazardSection.style.display = 'none';
+    }
+
+    // --- Alternatives Table ---
+    const altContainer = document.getElementById('alternativesContainer');
+    const altBody = document.getElementById('alternativesBody');
+    if (alternatives && alternatives.length > 0) {
+        altBody.innerHTML = alternatives.map(alt => {
+            const statusClass = alt.status === 'Safe' ? 'safe' : alt.status === 'Medium' ? 'warning' : 'danger';
+            return `<tr>
+                <td>${alt.name}</td>
+                <td>${alt.similarity}%</td>
+                <td>${alt.toxicity}</td>
+                <td><span class="status-tag ${statusClass}">${alt.status}</span></td>
+            </tr>`;
+        }).join('');
+        altContainer.style.display = 'block';
+    } else {
+        altContainer.style.display = 'none';
+    }
+}
+
+// Update a conic-gradient circle with score value
+function updateCircle(circleId, valueId, score, max, color) {
+    const circle = document.getElementById(circleId);
+    const value = document.getElementById(valueId);
+    if (circle && value) {
+        const pct = (score / max) * 100;
+        circle.style.background = `conic-gradient(${color} ${pct}%, var(--bg-color) 0)`;
+        value.textContent = score;
+    }
+}
+
+// Get color based on score (for toxicity: high=bad, for eco/perf: high=good)
+function getScoreColor(score, isInverse) {
+    if (isInverse) {
+        // High toxicity is bad
+        if (score >= 7) return 'var(--danger)';
+        if (score >= 4) return 'var(--warning)';
+        return 'var(--safe)';
+    } else {
+        // High eco/perf is good
+        if (score >= 7) return 'var(--safe)';
+        if (score >= 4) return 'var(--warning)';
+        return 'var(--danger)';
+    }
+}
+
+// Global function to reset the analyze form
 window.resetForm = function () {
     const analyzeForm = document.getElementById('analyzeForm');
     const resultsSection = document.getElementById('resultsSection');
@@ -208,4 +304,10 @@ window.resetForm = function () {
     document.getElementById('cardTitle').innerText = 'Analyze Chemical Form';
     analyzeForm.reset();
     analyzeForm.style.display = 'block';
+
+    // Reset dynamic areas
+    const hazardSection = document.getElementById('hazardSection');
+    const altContainer = document.getElementById('alternativesContainer');
+    if (hazardSection) hazardSection.style.display = 'none';
+    if (altContainer) altContainer.style.display = 'none';
 };
