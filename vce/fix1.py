@@ -1,65 +1,58 @@
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score, classification_report
-from imblearn.over_sampling import SMOTE
-import numpy as np
-import pandas as pd
 
-df = pd.read_csv("preprocessed_chemicals.csv")
-fingerprints = np.load('fingerprints.npy')
-
-X = fingerprints
-y = df['Toxicity_Encoded'].values[:len(fingerprints)]
-
-# Check current distribution
-print("Before balancing:")
-unique, counts = np.unique(y, return_counts=True)
-for u, c in zip(unique, counts):
-    print(f"  Class {u}: {c} records")
-
-# ---- FIX 1: REMOVE UNKNOWN CLASS ----
-# Unknown toxicity is noise — remove it from training
-# Model should only learn from chemicals with known toxicity
-known_mask = y != 0  # 0 = Unknown
-X_known = X[known_mask]
+# Remove Unknown
+known_mask = y != 0
+X_known = X_all[known_mask]
 y_known = y[known_mask]
-print(f"\nAfter removing Unknown: {len(X_known)} records")
+y_known_adj = y_known - 1   # XGBoost needs 0-based
+print(f'\nRecords for training: {len(X_known)}')
 
-# ---- FIX 2: BALANCE CLASSES WITH SMOTE ----
-# SMOTE creates synthetic samples for minority classes
-# So all classes have equal representation
-print("\nBalancing classes with SMOTE...")
-smote = SMOTE(random_state=42)
-X_balanced, y_balanced = smote.fit_resample(X_known, y_known)
-
-print("After balancing:")
-unique, counts = np.unique(y_balanced, return_counts=True)
-for u, c in zip(unique, counts):
-    print(f"  Class {u}: {c} records")
-
-# Split
+# Fix 1: Split FIRST
+print('Splitting data first...')
 X_train, X_test, y_train, y_test = train_test_split(
-    X_balanced, y_balanced,
-    test_size=0.2,
-    random_state=42,
-    stratify=y_balanced  # ensure equal class distribution in split
+    X_known, y_known_adj,
+    test_size=0.2, random_state=42,
+    stratify=y_known_adj
 )
 
-# ---- FIX 3: BETTER MODEL WITH CLASS WEIGHTS ----
-clf = RandomForestClassifier(
-    n_estimators=200,        # more trees = better accuracy
-    class_weight='balanced', # penalize wrong predictions on minority classes
-    max_depth=20,            # prevent overfitting
-    min_samples_split=5,
+# Fix 1: SMOTE on training only
+print('Applying SMOTE to training set only...')
+smote = SMOTE(random_state=42)
+X_train_bal, y_train_bal = smote.fit_resample(X_train, y_train)
+print(f'Training after SMOTE: {len(X_train_bal)}')
+print(f'Test set unchanged  : {len(X_test)}')
+
+# Fix 3: XGBoost
+print('\nTraining XGBoost...')
+clf = XGBClassifier(
+    n_estimators=300,
+    max_depth=6,
+    learning_rate=0.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    use_label_encoder=False,
+    eval_metric='mlogloss',
     random_state=42,
     n_jobs=-1
 )
-clf.fit(X_train, y_train)
+clf.fit(X_train_bal, y_train_bal,
+        eval_set=[(X_test, y_test)], verbose=100)
 
 y_pred = clf.predict(X_test)
 f1 = f1_score(y_test, y_pred, average='weighted')
-print(f"\nF1 Score: {f1:.3f}")
-print(classification_report(
-    y_test, y_pred,
-    target_names=['Low','Moderate','High']
-))
+
+print('\n' + '='*50)
+print('FINAL RESULTS')
+print('='*50)
+print(f'F1 Score: {f1:.3f}')
+
+lm = {0:'Low', 1:'Moderate', 2:'High'}
+uc = sorted(np.unique(y_test))
+tn = [lm[c] for c in uc]
+print(classification_report(y_test, y_pred, target_names=tn))
+
+train_pred = clf.predict(X_train_bal)
+train_f1 = f1_score(y_train_bal, train_pred, average='weighted')
+gap = train_f1 - f1
+
+
+
