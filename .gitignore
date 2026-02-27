@@ -1,0 +1,13 @@
+# Virtual environments
+vce/venv312/
+
+# Large data files
+*.csv
+*.xlsx
+*.pkl
+*.npy
+*.png
+
+# Python cache
+__pycache__/
+*.pyc
